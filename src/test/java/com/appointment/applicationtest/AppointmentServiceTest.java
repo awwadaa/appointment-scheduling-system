@@ -112,4 +112,104 @@ public class AppointmentServiceTest {
         assertEquals(AppointmentStatus.CANCELLED,
                 appointmentRepository.findById("AP1").getStatus());
     }
+    @Test
+    public void testBookAppointmentFailBecauseInvalidDuration() {
+        appointment.setDurationMinutes(10);
+        boolean result = appointmentService.bookAppointment(appointment);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testBookAppointmentFailBecauseInvalidCapacity() {
+        appointment.setParticipantCount(0);
+        boolean result = appointmentService.bookAppointment(appointment);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testBookAppointmentFailBecauseInvalidAppointmentTypeRule() {
+        appointment.setAppointmentType(AppointmentType.GROUP);
+        appointment.setParticipantCount(1);
+        boolean result = appointmentService.bookAppointment(appointment);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testCancelAppointmentFailWhenNotFound() {
+        boolean result = appointmentService.cancelAppointment("UNKNOWN");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testCancelAppointmentFailWhenAppointmentIsNotFuture() {
+        User user = new User("U2", "Ali", "ali@test.com", "0598888888");
+        TimeSlot slot = new TimeSlot("S2", LocalTime.of(10, 0), LocalTime.of(11, 0), true);
+
+        Appointment oldAppointment = new Appointment(
+                "OLD1",
+                user,
+                LocalDate.now(),
+                slot,
+                60,
+                1,
+                AppointmentType.INDIVIDUAL,
+                AppointmentStatus.CONFIRMED
+        );
+
+        appointmentRepository.save(oldAppointment);
+
+        boolean result = appointmentService.cancelAppointment("OLD1");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testModifyAppointmentFailWhenNotFound() {
+        boolean result = appointmentService.modifyAppointment("UNKNOWN", appointment);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testModifyAppointmentFailWhenAppointmentIsNotFuture() {
+        User user = new User("U3", "mohammed", "mohammed@test.com", "0597777777");
+        TimeSlot slot = new TimeSlot("S3", LocalTime.of(11, 0), LocalTime.of(12, 0), true);
+
+        Appointment oldAppointment = new Appointment(
+                "OLD2",
+                user,
+                LocalDate.now(),
+                slot,
+                60,
+                1,
+                AppointmentType.INDIVIDUAL,
+                AppointmentStatus.CONFIRMED
+        );
+
+        appointmentRepository.save(oldAppointment);
+
+        boolean result = appointmentService.modifyAppointment("OLD2", appointment);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testModifyAppointmentFailBecauseNewSlotUnavailable() {
+        appointmentService.bookAppointment(appointment);
+
+        TimeSlot anotherSlot = new TimeSlot("S2", LocalTime.of(10, 0), LocalTime.of(11, 0), false);
+
+        User secondUser = new User("U4", "Ahmad", "ahmad@test.com", "0596666666");
+        Appointment updatedAppointment = new Appointment(
+                "AP1",
+                secondUser,
+                LocalDate.now().plusDays(1),
+                anotherSlot,
+                60,
+                1,
+                AppointmentType.INDIVIDUAL,
+                AppointmentStatus.CONFIRMED
+        );
+
+        boolean result = appointmentService.modifyAppointment("AP1", updatedAppointment);
+
+        assertFalse(result);
+    }
 }
