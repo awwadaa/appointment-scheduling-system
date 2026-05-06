@@ -97,7 +97,7 @@ Or from Eclipse:
 
 ## Test Coverage
 The project achieves high test coverage:
-93%
+92%
 
 ---
 

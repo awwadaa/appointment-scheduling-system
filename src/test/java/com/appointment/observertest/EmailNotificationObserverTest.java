@@ -1,32 +1,34 @@
 package com.appointment.observertest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import com.appointment.domain.entities.User;
 import com.appointment.observer.EmailNotificationObserver;
+import com.appointment.observer.EmailSender;
 
+/**
+ * Test class for EmailNotificationObserver.
+ * 
+ * @author awwadaa
+ * @version 1.0
+ */
 public class EmailNotificationObserverTest {
 
+    /**
+     * Tests that update() delegates email sending to EmailSender.
+     */
     @Test
     public void testUpdate() {
         User user = new User("U1", "Awwad", "awwad@test.com", "0599999999");
-        EmailNotificationObserver observer = new EmailNotificationObserver();
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outputStream));
+        EmailSender emailSender = Mockito.mock(EmailSender.class);
+        EmailNotificationObserver observer = new EmailNotificationObserver(emailSender);
 
         observer.update(user, "Test email");
 
-        System.setOut(originalOut);
-
-        String output = outputStream.toString();
-        assertTrue(output.contains("Email sent to awwad@test.com"));
-        assertTrue(output.contains("Test email"));
+        verify(emailSender).send("awwad@test.com", "Appointment Reminder", "Test email");
     }
 }

@@ -14,6 +14,8 @@ import com.appointment.domain.entities.Administrator;
 import com.appointment.domain.entities.Schedule;
 import com.appointment.domain.valueobjects.TimeSlot;
 import com.appointment.observer.EmailNotificationObserver;
+import com.appointment.observer.EmailSender;
+import com.appointment.observer.GmailEmailSender;
 import com.appointment.observer.NotificationSubject;
 import com.appointment.observer.SMSNotificationObserver;
 import com.appointment.persistence.AdminRepository;
@@ -54,7 +56,13 @@ public class MainApp {
         scheduleRepository.saveSchedule(schedule);
 
         NotificationSubject notificationSubject = new NotificationSubject();
-        notificationSubject.addObserver(new EmailNotificationObserver());
+
+        EmailSender emailSender = new GmailEmailSender(
+                "awwad3905@gmail.com",
+                "yhgtwuzjcxxkvnqb"
+        );
+
+        notificationSubject.addObserver(new EmailNotificationObserver(emailSender));
         notificationSubject.addObserver(new SMSNotificationObserver());
 
         AuthService authService = new AuthService(adminRepository);
