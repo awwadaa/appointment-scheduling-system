@@ -1,6 +1,7 @@
 package com.appointment.strategytest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,13 +16,13 @@ import com.appointment.domain.enums.AppointmentType;
 import com.appointment.domain.valueobjects.TimeSlot;
 import com.appointment.strategy.DurationRule;
 
-public class DurationRuleTest {
+class DurationRuleTest {
 
     private DurationRule durationRule;
     private Appointment appointment;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         durationRule = new DurationRule();
 
         User user = new User("U1", "Awwad", "Awwad@test.com", "0599999999");
@@ -40,20 +41,23 @@ public class DurationRuleTest {
     }
 
     @Test
-    public void testValidDuration() {
+    void testValidDuration() {
         appointment.setDurationMinutes(60);
+
         assertTrue(durationRule.validate(appointment));
     }
 
     @Test
-    public void testInvalidTooShortDuration() {
+    void testInvalidTooShortDuration() {
         appointment.setDurationMinutes(10);
+
         assertFalse(durationRule.validate(appointment));
     }
 
     @Test
-    public void testInvalidTooLongDuration() {
+    void testInvalidTooLongDuration() {
         appointment.setDurationMinutes(200);
+
         assertFalse(durationRule.validate(appointment));
     }
 }
