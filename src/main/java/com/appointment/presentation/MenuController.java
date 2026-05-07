@@ -29,6 +29,14 @@ public class MenuController {
     private static final String INVALID_SLOT_ID = "Invalid slot id.";
     private static final String INVALID_APPOINTMENT_TYPE = "Invalid appointment type.";
     private static final String APPOINTMENT_TYPES_TITLE = "Appointment Types:";
+    private static final String DATE_PROMPT = "Enter appointment date (yyyy-mm-dd):";
+    private static final String NEW_DATE_PROMPT = "Enter new appointment date (yyyy-mm-dd):";
+    private static final String DURATION_PROMPT = "Enter duration in minutes:";
+    private static final String NEW_DURATION_PROMPT = "Enter new duration in minutes:";
+    private static final String PARTICIPANT_COUNT_PROMPT = "Enter participant count:";
+    private static final String NEW_PARTICIPANT_COUNT_PROMPT = "Enter new participant count:";
+    private static final String TYPE_PROMPT = "Enter appointment type exactly as shown:";
+    private static final String NEW_TYPE_PROMPT = "Enter new appointment type exactly as shown:";
 
     private final MenuDisplay menuDisplay;
     private final InputHandler inputHandler;
@@ -74,38 +82,41 @@ public class MenuController {
         do {
             menuDisplay.displayMainMenu();
             choice = inputHandler.readInt();
-
-            switch (choice) {
-                case 1:
-                    handleAdminLogin();
-                    break;
-                case 2:
-                    handleViewAvailableSlots();
-                    break;
-                case 3:
-                    handleBookAppointment();
-                    break;
-                case 4:
-                    handleCancelAppointment();
-                    break;
-                case 5:
-                    handleModifyAppointment();
-                    break;
-                case 6:
-                    handleSendReminder();
-                    break;
-                case 7:
-                    handleAdminLogout();
-                    break;
-                case 0:
-                    displayMessage("Exiting system...");
-                    break;
-                default:
-                    displayMessage("Invalid option.");
-            }
+            handleMainMenuChoice(choice);
         } while (choice != 0);
 
         inputHandler.close();
+    }
+
+    private void handleMainMenuChoice(int choice) {
+        switch (choice) {
+            case 1:
+                handleAdminLogin();
+                break;
+            case 2:
+                handleViewAvailableSlots();
+                break;
+            case 3:
+                handleBookAppointment();
+                break;
+            case 4:
+                handleCancelAppointment();
+                break;
+            case 5:
+                handleModifyAppointment();
+                break;
+            case 6:
+                handleSendReminder();
+                break;
+            case 7:
+                handleAdminLogout();
+                break;
+            case 0:
+                displayMessage("Exiting system...");
+                break;
+            default:
+                displayMessage("Invalid option.");
+        }
     }
 
     /**
@@ -118,11 +129,11 @@ public class MenuController {
         displayMessage("Enter password:");
         String password = inputHandler.readString();
 
-        if (authService.login(username, password)) {
-            displayMessage("Administrator logged in successfully.");
-        } else {
-            displayMessage("Invalid username or password.");
-        }
+        displayOperationResult(
+                authService.login(username, password),
+                "Administrator logged in successfully.",
+                "Invalid username or password."
+        );
     }
 
     /**
@@ -137,9 +148,7 @@ public class MenuController {
      * Handles viewing available slots for a given date.
      */
     private void handleViewAvailableSlots() {
-        displayMessage("Enter appointment date (yyyy-mm-dd):");
-        LocalDate date = inputHandler.readDate();
-
+        LocalDate date = readDate(DATE_PROMPT);
         List<TimeSlot> availableSlots = scheduleService.getAvailableSlots(date);
 
         if (availableSlots.isEmpty()) {
@@ -159,54 +168,30 @@ public class MenuController {
 
         User user = readUserDetails();
 
-        displayMessage("Enter appointment date (yyyy-mm-dd):");
-        LocalDate appointmentDate = inputHandler.readDate();
+        AppointmentInputData inputData = readAppointmentInputData(
+                DATE_PROMPT,
+                "No available slots found for this date.",
+                DURATION_PROMPT,
+                PARTICIPANT_COUNT_PROMPT,
+                TYPE_PROMPT
+        );
 
-        List<TimeSlot> availableSlots = scheduleService.getAvailableSlots(appointmentDate);
-
-        if (availableSlots.isEmpty()) {
-            displayMessage("No available slots found for this date.");
+        if (inputData == null) {
             return;
         }
 
-        displayAvailableSlots(availableSlots);
-
-        TimeSlot selectedSlot = readSelectedSlot(availableSlots);
-
-        if (selectedSlot == null) {
-            displayMessage(INVALID_SLOT_ID);
-            return;
-        }
-
-        displayMessage("Enter duration in minutes:");
-        int duration = inputHandler.readInt();
-
-        displayMessage("Enter participant count:");
-        int participantCount = inputHandler.readInt();
-
-        AppointmentType appointmentType = readAppointmentType("Enter appointment type exactly as shown:");
-
-        if (appointmentType == null) {
-            displayMessage(INVALID_APPOINTMENT_TYPE);
-            return;
-        }
-
-        Appointment appointment = new Appointment(
+        Appointment appointment = createAppointment(
                 appointmentId,
                 user,
-                appointmentDate,
-                selectedSlot,
-                duration,
-                participantCount,
-                appointmentType,
+                inputData,
                 AppointmentStatus.CONFIRMED
         );
 
-        if (appointmentService.bookAppointment(appointment)) {
-            displayMessage("Appointment booked successfully.");
-        } else {
-            displayMessage("Appointment booking failed.");
-        }
+        displayOperationResult(
+                appointmentService.bookAppointment(appointment),
+                "Appointment booked successfully.",
+                "Appointment booking failed."
+        );
     }
 
     /**
@@ -216,19 +201,13 @@ public class MenuController {
         displayMessage("Enter appointment id to cancel:");
         String appointmentId = inputHandler.readString();
 
-        boolean cancelled;
+        boolean cancelled = cancelAppointment(appointmentId);
 
-        if (authService.isAdminLoggedIn()) {
-            cancelled = adminService.cancelReservationAsAdmin(appointmentId);
-        } else {
-            cancelled = appointmentService.cancelAppointment(appointmentId);
-        }
-
-        if (cancelled) {
-            displayMessage("Appointment cancelled successfully.");
-        } else {
-            displayMessage("Cancellation failed.");
-        }
+        displayOperationResult(
+                cancelled,
+                "Appointment cancelled successfully.",
+                "Cancellation failed."
+        );
     }
 
     /**
@@ -245,62 +224,32 @@ public class MenuController {
             return;
         }
 
-        displayMessage("Enter new appointment date (yyyy-mm-dd):");
-        LocalDate newDate = inputHandler.readDate();
+        AppointmentInputData inputData = readAppointmentInputData(
+                NEW_DATE_PROMPT,
+                "No available slots for the selected date.",
+                NEW_DURATION_PROMPT,
+                NEW_PARTICIPANT_COUNT_PROMPT,
+                NEW_TYPE_PROMPT
+        );
 
-        List<TimeSlot> availableSlots = scheduleService.getAvailableSlots(newDate);
-
-        if (availableSlots.isEmpty()) {
-            displayMessage("No available slots for the selected date.");
+        if (inputData == null) {
             return;
         }
 
-        displayAvailableSlots(availableSlots);
-
-        TimeSlot selectedSlot = readSelectedSlot(availableSlots);
-
-        if (selectedSlot == null) {
-            displayMessage(INVALID_SLOT_ID);
-            return;
-        }
-
-        displayMessage("Enter new duration in minutes:");
-        int duration = inputHandler.readInt();
-
-        displayMessage("Enter new participant count:");
-        int participantCount = inputHandler.readInt();
-
-        AppointmentType appointmentType = readAppointmentType("Enter new appointment type exactly as shown:");
-
-        if (appointmentType == null) {
-            displayMessage(INVALID_APPOINTMENT_TYPE);
-            return;
-        }
-
-        Appointment updatedAppointment = new Appointment(
+        Appointment updatedAppointment = createAppointment(
                 appointmentId,
                 existingAppointment.getUser(),
-                newDate,
-                selectedSlot,
-                duration,
-                participantCount,
-                appointmentType,
+                inputData,
                 existingAppointment.getStatus()
         );
 
-        boolean modified;
+        boolean modified = modifyAppointment(appointmentId, updatedAppointment);
 
-        if (authService.isAdminLoggedIn()) {
-            modified = adminService.modifyReservationAsAdmin(appointmentId, updatedAppointment);
-        } else {
-            modified = appointmentService.modifyAppointment(appointmentId, updatedAppointment);
-        }
-
-        if (modified) {
-            displayMessage("Appointment modified successfully.");
-        } else {
-            displayMessage("Modification failed.");
-        }
+        displayOperationResult(
+                modified,
+                "Appointment modified successfully.",
+                "Modification failed."
+        );
     }
 
     /**
@@ -337,6 +286,56 @@ public class MenuController {
         return new User(userId, userName, userEmail, userPhone);
     }
 
+    private AppointmentInputData readAppointmentInputData(String datePrompt,
+                                                          String emptySlotsMessage,
+                                                          String durationPrompt,
+                                                          String participantCountPrompt,
+                                                          String typePrompt) {
+        LocalDate appointmentDate = readDate(datePrompt);
+        List<TimeSlot> availableSlots = scheduleService.getAvailableSlots(appointmentDate);
+
+        if (availableSlots.isEmpty()) {
+            displayMessage(emptySlotsMessage);
+            return null;
+        }
+
+        displayAvailableSlots(availableSlots);
+
+        TimeSlot selectedSlot = readSelectedSlot(availableSlots);
+
+        if (selectedSlot == null) {
+            displayMessage(INVALID_SLOT_ID);
+            return null;
+        }
+
+        int duration = readInt(durationPrompt);
+        int participantCount = readInt(participantCountPrompt);
+        AppointmentType appointmentType = readAppointmentType(typePrompt);
+
+        if (appointmentType == null) {
+            displayMessage(INVALID_APPOINTMENT_TYPE);
+            return null;
+        }
+
+        return new AppointmentInputData(
+                appointmentDate,
+                selectedSlot,
+                duration,
+                participantCount,
+                appointmentType
+        );
+    }
+
+    private LocalDate readDate(String promptMessage) {
+        displayMessage(promptMessage);
+        return inputHandler.readDate();
+    }
+
+    private int readInt(String promptMessage) {
+        displayMessage(promptMessage);
+        return inputHandler.readInt();
+    }
+
     private TimeSlot readSelectedSlot(List<TimeSlot> availableSlots) {
         displayMessage("Enter slot id:");
         String slotId = inputHandler.readString();
@@ -356,10 +355,58 @@ public class MenuController {
 
         String appointmentTypeInput = inputHandler.readString();
 
-        try {
-            return AppointmentType.valueOf(appointmentTypeInput.toUpperCase());
-        } catch (IllegalArgumentException exception) {
-            return null;
+        return findAppointmentType(appointmentTypeInput);
+    }
+
+    private static AppointmentType findAppointmentType(String appointmentTypeInput) {
+        for (AppointmentType type : AppointmentType.values()) {
+            if (type.name().equalsIgnoreCase(appointmentTypeInput)) {
+                return type;
+            }
+        }
+
+        return null;
+    }
+
+    private Appointment createAppointment(String appointmentId,
+                                          User user,
+                                          AppointmentInputData inputData,
+                                          AppointmentStatus status) {
+        return new Appointment(
+                appointmentId,
+                user,
+                inputData.appointmentDate,
+                inputData.selectedSlot,
+                inputData.duration,
+                inputData.participantCount,
+                inputData.appointmentType,
+                status
+        );
+    }
+
+    private boolean cancelAppointment(String appointmentId) {
+        if (authService.isAdminLoggedIn()) {
+            return adminService.cancelReservationAsAdmin(appointmentId);
+        }
+
+        return appointmentService.cancelAppointment(appointmentId);
+    }
+
+    private boolean modifyAppointment(String appointmentId, Appointment updatedAppointment) {
+        if (authService.isAdminLoggedIn()) {
+            return adminService.modifyReservationAsAdmin(appointmentId, updatedAppointment);
+        }
+
+        return appointmentService.modifyAppointment(appointmentId, updatedAppointment);
+    }
+
+    private static void displayOperationResult(boolean successful,
+                                               String successMessage,
+                                               String failureMessage) {
+        if (successful) {
+            displayMessage(successMessage);
+        } else {
+            displayMessage(failureMessage);
         }
     }
 
@@ -381,5 +428,26 @@ public class MenuController {
 
     private static void displayMessage(String message) {
         LOGGER.info(message);
+    }
+
+    private static final class AppointmentInputData {
+
+        private final LocalDate appointmentDate;
+        private final TimeSlot selectedSlot;
+        private final int duration;
+        private final int participantCount;
+        private final AppointmentType appointmentType;
+
+        private AppointmentInputData(LocalDate appointmentDate,
+                                     TimeSlot selectedSlot,
+                                     int duration,
+                                     int participantCount,
+                                     AppointmentType appointmentType) {
+            this.appointmentDate = appointmentDate;
+            this.selectedSlot = selectedSlot;
+            this.duration = duration;
+            this.participantCount = participantCount;
+            this.appointmentType = appointmentType;
+        }
     }
 }
