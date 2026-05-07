@@ -1,7 +1,13 @@
 package com.appointment.applicationtest;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,21 +17,21 @@ import com.appointment.application.AppointmentService;
 import com.appointment.application.AuthService;
 import com.appointment.domain.entities.Appointment;
 
-public class AdminServiceTest {
+class AdminServiceTest {
 
     private AppointmentService appointmentService;
     private AuthService authService;
     private AdminService adminService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         appointmentService = mock(AppointmentService.class);
         authService = mock(AuthService.class);
         adminService = new AdminService(appointmentService, authService);
     }
 
     @Test
-    public void testCancelReservationAsAdminWhenLoggedIn() {
+    void testCancelReservationAsAdminWhenLoggedIn() {
         when(authService.isAdminLoggedIn()).thenReturn(true);
         when(appointmentService.cancelAppointment("AP1")).thenReturn(true);
 
@@ -35,7 +41,7 @@ public class AdminServiceTest {
     }
 
     @Test
-    public void testCancelReservationAsAdminWhenNotLoggedIn() {
+    void testCancelReservationAsAdminWhenNotLoggedIn() {
         when(authService.isAdminLoggedIn()).thenReturn(false);
 
         boolean result = adminService.cancelReservationAsAdmin("AP1");
@@ -45,7 +51,7 @@ public class AdminServiceTest {
     }
 
     @Test
-    public void testModifyReservationAsAdminWhenLoggedIn() {
+    void testModifyReservationAsAdminWhenLoggedIn() {
         Appointment updatedAppointment = mock(Appointment.class);
 
         when(authService.isAdminLoggedIn()).thenReturn(true);
@@ -57,7 +63,7 @@ public class AdminServiceTest {
     }
 
     @Test
-    public void testModifyReservationAsAdminWhenNotLoggedIn() {
+    void testModifyReservationAsAdminWhenNotLoggedIn() {
         Appointment updatedAppointment = mock(Appointment.class);
 
         when(authService.isAdminLoggedIn()).thenReturn(false);
