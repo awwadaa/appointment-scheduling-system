@@ -2,6 +2,7 @@ package com.appointment.presentation;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.logging.Logger;
 
 import com.appointment.application.AdminService;
 import com.appointment.application.AppointmentService;
@@ -16,23 +17,30 @@ import com.appointment.domain.valueobjects.TimeSlot;
 
 /**
  * Controls menu actions and connects the presentation layer with the services.
- * 
+ *
  * @author awwadaa
  * @version 1.0
  */
 public class MenuController {
 
-    private MenuDisplay menuDisplay;
-    private InputHandler inputHandler;
-    private AuthService authService;
-    private ScheduleService scheduleService;
-    private AppointmentService appointmentService;
-    private ReminderService reminderService;
-    private AdminService adminService;
+    private static final Logger LOGGER = Logger.getLogger(MenuController.class.getName());
+
+    private static final String APPOINTMENT_NOT_FOUND = "Appointment not found.";
+    private static final String INVALID_SLOT_ID = "Invalid slot id.";
+    private static final String INVALID_APPOINTMENT_TYPE = "Invalid appointment type.";
+    private static final String APPOINTMENT_TYPES_TITLE = "Appointment Types:";
+
+    private final MenuDisplay menuDisplay;
+    private final InputHandler inputHandler;
+    private final AuthService authService;
+    private final ScheduleService scheduleService;
+    private final AppointmentService appointmentService;
+    private final ReminderService reminderService;
+    private final AdminService adminService;
 
     /**
      * Constructs a MenuController object.
-     * 
+     *
      * @param menuDisplay the menu display
      * @param inputHandler the input handler
      * @param authService the authentication service
@@ -90,12 +98,11 @@ public class MenuController {
                     handleAdminLogout();
                     break;
                 case 0:
-                    System.out.println("Exiting system...");
+                    displayMessage("Exiting system...");
                     break;
                 default:
-                    System.out.println("Invalid option.");
+                    displayMessage("Invalid option.");
             }
-
         } while (choice != 0);
 
         inputHandler.close();
@@ -105,16 +112,16 @@ public class MenuController {
      * Handles administrator login.
      */
     private void handleAdminLogin() {
-        System.out.print("Enter username: ");
+        displayMessage("Enter username:");
         String username = inputHandler.readString();
 
-        System.out.print("Enter password: ");
+        displayMessage("Enter password:");
         String password = inputHandler.readString();
 
         if (authService.login(username, password)) {
-            System.out.println("Administrator logged in successfully.");
+            displayMessage("Administrator logged in successfully.");
         } else {
-            System.out.println("Invalid username or password.");
+            displayMessage("Invalid username or password.");
         }
     }
 
@@ -123,100 +130,64 @@ public class MenuController {
      */
     private void handleAdminLogout() {
         authService.logout();
-        System.out.println("Administrator logged out.");
+        displayMessage("Administrator logged out.");
     }
 
     /**
      * Handles viewing available slots for a given date.
      */
     private void handleViewAvailableSlots() {
-        System.out.print("Enter appointment date (yyyy-mm-dd): ");
+        displayMessage("Enter appointment date (yyyy-mm-dd):");
         LocalDate date = inputHandler.readDate();
 
         List<TimeSlot> availableSlots = scheduleService.getAvailableSlots(date);
 
         if (availableSlots.isEmpty()) {
-            System.out.println("No available slots found.");
+            displayMessage("No available slots found.");
             return;
         }
 
-        System.out.println("Available slots:");
-        for (TimeSlot slot : availableSlots) {
-            System.out.println(slot);
-        }
+        displayAvailableSlots(availableSlots);
     }
 
     /**
      * Handles booking an appointment.
      */
     private void handleBookAppointment() {
-        System.out.print("Enter appointment id: ");
+        displayMessage("Enter appointment id:");
         String appointmentId = inputHandler.readString();
 
-        System.out.print("Enter user id: ");
-        String userId = inputHandler.readString();
+        User user = readUserDetails();
 
-        System.out.print("Enter user name: ");
-        String userName = inputHandler.readString();
-
-        System.out.print("Enter user email: ");
-        String userEmail = inputHandler.readString();
-
-        System.out.print("Enter user phone: ");
-        String userPhone = inputHandler.readString();
-
-        User user = new User(userId, userName, userEmail, userPhone);
-
-        System.out.print("Enter appointment date (yyyy-mm-dd): ");
+        displayMessage("Enter appointment date (yyyy-mm-dd):");
         LocalDate appointmentDate = inputHandler.readDate();
 
-        System.out.println("Available slots for this date:");
         List<TimeSlot> availableSlots = scheduleService.getAvailableSlots(appointmentDate);
 
         if (availableSlots.isEmpty()) {
-            System.out.println("No available slots found for this date.");
+            displayMessage("No available slots found for this date.");
             return;
         }
 
-        for (TimeSlot slot : availableSlots) {
-            System.out.println(slot);
-        }
+        displayAvailableSlots(availableSlots);
 
-        System.out.print("Enter slot id: ");
-        String slotId = inputHandler.readString();
-
-        TimeSlot selectedSlot = null;
-        for (TimeSlot slot : availableSlots) {
-            if (slot.getSlotId().equals(slotId)) {
-                selectedSlot = slot;
-                break;
-            }
-        }
+        TimeSlot selectedSlot = readSelectedSlot(availableSlots);
 
         if (selectedSlot == null) {
-            System.out.println("Invalid slot id.");
+            displayMessage(INVALID_SLOT_ID);
             return;
         }
 
-        System.out.print("Enter duration in minutes: ");
+        displayMessage("Enter duration in minutes:");
         int duration = inputHandler.readInt();
 
-        System.out.print("Enter participant count: ");
+        displayMessage("Enter participant count:");
         int participantCount = inputHandler.readInt();
 
-        System.out.println("Appointment Types:");
-        for (AppointmentType type : AppointmentType.values()) {
-            System.out.println("- " + type);
-        }
+        AppointmentType appointmentType = readAppointmentType("Enter appointment type exactly as shown:");
 
-        System.out.print("Enter appointment type exactly as shown: ");
-        String appointmentTypeInput = inputHandler.readString();
-
-        AppointmentType appointmentType;
-        try {
-            appointmentType = AppointmentType.valueOf(appointmentTypeInput.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid appointment type.");
+        if (appointmentType == null) {
+            displayMessage(INVALID_APPOINTMENT_TYPE);
             return;
         }
 
@@ -232,9 +203,9 @@ public class MenuController {
         );
 
         if (appointmentService.bookAppointment(appointment)) {
-            System.out.println("Appointment booked successfully.");
+            displayMessage("Appointment booked successfully.");
         } else {
-            System.out.println("Appointment booking failed.");
+            displayMessage("Appointment booking failed.");
         }
     }
 
@@ -242,7 +213,7 @@ public class MenuController {
      * Handles cancelling an appointment.
      */
     private void handleCancelAppointment() {
-        System.out.print("Enter appointment id to cancel: ");
+        displayMessage("Enter appointment id to cancel:");
         String appointmentId = inputHandler.readString();
 
         boolean cancelled;
@@ -254,9 +225,9 @@ public class MenuController {
         }
 
         if (cancelled) {
-            System.out.println("Appointment cancelled successfully.");
+            displayMessage("Appointment cancelled successfully.");
         } else {
-            System.out.println("Cancellation failed.");
+            displayMessage("Cancellation failed.");
         }
     }
 
@@ -264,66 +235,45 @@ public class MenuController {
      * Handles modifying an appointment.
      */
     private void handleModifyAppointment() {
-        System.out.print("Enter appointment id to modify: ");
+        displayMessage("Enter appointment id to modify:");
         String appointmentId = inputHandler.readString();
 
         Appointment existingAppointment = appointmentService.findAppointmentById(appointmentId);
 
         if (existingAppointment == null) {
-            System.out.println("Appointment not found.");
+            displayMessage(APPOINTMENT_NOT_FOUND);
             return;
         }
 
-        System.out.print("Enter new appointment date (yyyy-mm-dd): ");
+        displayMessage("Enter new appointment date (yyyy-mm-dd):");
         LocalDate newDate = inputHandler.readDate();
 
         List<TimeSlot> availableSlots = scheduleService.getAvailableSlots(newDate);
 
         if (availableSlots.isEmpty()) {
-            System.out.println("No available slots for the selected date.");
+            displayMessage("No available slots for the selected date.");
             return;
         }
 
-        System.out.println("Available slots:");
-        for (TimeSlot slot : availableSlots) {
-            System.out.println(slot);
-        }
+        displayAvailableSlots(availableSlots);
 
-        System.out.print("Enter new slot id: ");
-        String slotId = inputHandler.readString();
-
-        TimeSlot selectedSlot = null;
-        for (TimeSlot slot : availableSlots) {
-            if (slot.getSlotId().equals(slotId)) {
-                selectedSlot = slot;
-                break;
-            }
-        }
+        TimeSlot selectedSlot = readSelectedSlot(availableSlots);
 
         if (selectedSlot == null) {
-            System.out.println("Invalid slot id.");
+            displayMessage(INVALID_SLOT_ID);
             return;
         }
 
-        System.out.print("Enter new duration in minutes: ");
+        displayMessage("Enter new duration in minutes:");
         int duration = inputHandler.readInt();
 
-        System.out.print("Enter new participant count: ");
+        displayMessage("Enter new participant count:");
         int participantCount = inputHandler.readInt();
 
-        System.out.println("Appointment Types:");
-        for (AppointmentType type : AppointmentType.values()) {
-            System.out.println("- " + type);
-        }
+        AppointmentType appointmentType = readAppointmentType("Enter new appointment type exactly as shown:");
 
-        System.out.print("Enter new appointment type exactly as shown: ");
-        String appointmentTypeInput = inputHandler.readString();
-
-        AppointmentType appointmentType;
-        try {
-            appointmentType = AppointmentType.valueOf(appointmentTypeInput.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid appointment type.");
+        if (appointmentType == null) {
+            displayMessage(INVALID_APPOINTMENT_TYPE);
             return;
         }
 
@@ -347,9 +297,9 @@ public class MenuController {
         }
 
         if (modified) {
-            System.out.println("Appointment modified successfully.");
+            displayMessage("Appointment modified successfully.");
         } else {
-            System.out.println("Modification failed.");
+            displayMessage("Modification failed.");
         }
     }
 
@@ -357,17 +307,79 @@ public class MenuController {
      * Handles sending a reminder for an appointment.
      */
     private void handleSendReminder() {
-        System.out.print("Enter appointment id: ");
+        displayMessage("Enter appointment id:");
         String appointmentId = inputHandler.readString();
 
         Appointment appointment = appointmentService.findAppointmentById(appointmentId);
 
         if (appointment == null) {
-            System.out.println("Appointment not found.");
+            displayMessage(APPOINTMENT_NOT_FOUND);
             return;
         }
 
         reminderService.sendReminder(appointment);
-        System.out.println("Reminder sent successfully.");
+        displayMessage("Reminder sent successfully.");
+    }
+
+    private User readUserDetails() {
+        displayMessage("Enter user id:");
+        String userId = inputHandler.readString();
+
+        displayMessage("Enter user name:");
+        String userName = inputHandler.readString();
+
+        displayMessage("Enter user email:");
+        String userEmail = inputHandler.readString();
+
+        displayMessage("Enter user phone:");
+        String userPhone = inputHandler.readString();
+
+        return new User(userId, userName, userEmail, userPhone);
+    }
+
+    private TimeSlot readSelectedSlot(List<TimeSlot> availableSlots) {
+        displayMessage("Enter slot id:");
+        String slotId = inputHandler.readString();
+
+        for (TimeSlot slot : availableSlots) {
+            if (slot.getSlotId().equals(slotId)) {
+                return slot;
+            }
+        }
+
+        return null;
+    }
+
+    private AppointmentType readAppointmentType(String promptMessage) {
+        displayAppointmentTypes();
+        displayMessage(promptMessage);
+
+        String appointmentTypeInput = inputHandler.readString();
+
+        try {
+            return AppointmentType.valueOf(appointmentTypeInput.toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private static void displayAppointmentTypes() {
+        displayMessage(APPOINTMENT_TYPES_TITLE);
+
+        for (AppointmentType type : AppointmentType.values()) {
+            displayMessage("- " + type);
+        }
+    }
+
+    private static void displayAvailableSlots(List<TimeSlot> availableSlots) {
+        displayMessage("Available slots:");
+
+        for (TimeSlot slot : availableSlots) {
+            displayMessage(slot.toString());
+        }
+    }
+
+    private static void displayMessage(String message) {
+        LOGGER.info(message);
     }
 }
