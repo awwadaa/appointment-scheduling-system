@@ -1,6 +1,7 @@
 package com.appointment.persistencetest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,31 +9,39 @@ import org.junit.jupiter.api.Test;
 import com.appointment.domain.entities.User;
 import com.appointment.persistence.UserRepository;
 
-public class UserRepositoryTest {
+class UserRepositoryTest {
+
+    private static final String USER_ID = "U1";
+    private static final String USER_NAME = "Awwad";
+    private static final String USER_EMAIL = "awwad@test.com";
+    private static final String USER_PHONE = "0599999999";
+    private static final String UNKNOWN_USER_ID = "UNKNOWN";
 
     private UserRepository repository;
     private User user;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         repository = new UserRepository();
-        user = new User("U1", "Awwad", "awwad@test.com", "0599999999");
+        user = new User(USER_ID, USER_NAME, USER_EMAIL, USER_PHONE);
     }
 
     @Test
-    public void testAddUserAndFindById() {
+    void testAddUserAndFindById() {
         repository.addUser(user);
-        assertEquals(user, repository.findById("U1"));
+
+        assertEquals(user, repository.findById(USER_ID));
     }
 
     @Test
-    public void testFindAll() {
+    void testFindAll() {
         repository.addUser(user);
+
         assertEquals(1, repository.findAll().size());
     }
 
     @Test
-    public void testFindByIdWhenNotFound() {
-        assertNull(repository.findById("UNKNOWN"));
+    void testFindByIdWhenNotFound() {
+        assertNull(repository.findById(UNKNOWN_USER_ID));
     }
 }
