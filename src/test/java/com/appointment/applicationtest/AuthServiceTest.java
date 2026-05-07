@@ -1,6 +1,7 @@
 package com.appointment.applicationtest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,36 +10,45 @@ import com.appointment.application.AuthService;
 import com.appointment.domain.entities.Administrator;
 import com.appointment.persistence.AdminRepository;
 
-public class AuthServiceTest {
+class AuthServiceTest {
+
+    private static final String ADMIN_ID = "A1";
+    private static final String ADMIN_USERNAME = "admin";
+    private static final String ADMIN_PASSWORD = "admin123";
+    private static final String WRONG_PASSWORD = "wrongpass";
 
     private AdminRepository adminRepository;
     private AuthService authService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         adminRepository = new AdminRepository();
-        adminRepository.addAdmin(new Administrator("A1", "admin", "admin123", false));
+        adminRepository.addAdmin(new Administrator(ADMIN_ID, ADMIN_USERNAME, ADMIN_PASSWORD, false));
         authService = new AuthService(adminRepository);
     }
 
     @Test
-    public void testLoginSuccess() {
-        boolean result = authService.login("admin", "admin123");
+    void testLoginSuccess() {
+        boolean result = authService.login(ADMIN_USERNAME, ADMIN_PASSWORD);
+
         assertTrue(result);
         assertTrue(authService.isAdminLoggedIn());
     }
 
     @Test
-    public void testLoginFailure() {
-        boolean result = authService.login("admin", "wrongpass");
+    void testLoginFailure() {
+        boolean result = authService.login(ADMIN_USERNAME, WRONG_PASSWORD);
+
         assertFalse(result);
         assertFalse(authService.isAdminLoggedIn());
     }
 
     @Test
-    public void testLogout() {
-        authService.login("admin", "admin123");
+    void testLogout() {
+        authService.login(ADMIN_USERNAME, ADMIN_PASSWORD);
+
         authService.logout();
+
         assertFalse(authService.isAdminLoggedIn());
     }
 }
