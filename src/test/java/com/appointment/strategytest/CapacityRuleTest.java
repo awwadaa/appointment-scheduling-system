@@ -1,6 +1,7 @@
 package com.appointment.strategytest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,13 +16,13 @@ import com.appointment.domain.enums.AppointmentType;
 import com.appointment.domain.valueobjects.TimeSlot;
 import com.appointment.strategy.CapacityRule;
 
-public class CapacityRuleTest {
+class CapacityRuleTest {
 
     private CapacityRule capacityRule;
     private Appointment appointment;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         capacityRule = new CapacityRule();
 
         User user = new User("U1", "Awwad", "awwad@test.com", "0599999999");
@@ -40,20 +41,23 @@ public class CapacityRuleTest {
     }
 
     @Test
-    public void testValidCapacity() {
+    void testValidCapacity() {
         appointment.setParticipantCount(3);
+
         assertTrue(capacityRule.validate(appointment));
     }
 
     @Test
-    public void testInvalidZeroCapacity() {
+    void testInvalidZeroCapacity() {
         appointment.setParticipantCount(0);
+
         assertFalse(capacityRule.validate(appointment));
     }
 
     @Test
-    public void testInvalidExceedingCapacity() {
+    void testInvalidExceedingCapacity() {
         appointment.setParticipantCount(11);
+
         assertFalse(capacityRule.validate(appointment));
     }
 }
