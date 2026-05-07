@@ -1,6 +1,9 @@
 package com.appointment.applicationtest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -25,7 +28,7 @@ import com.appointment.strategy.AppointmentTypeRule;
 import com.appointment.strategy.CapacityRule;
 import com.appointment.strategy.DurationRule;
 
-public class AppointmentServiceTest {
+class AppointmentServiceTest {
 
     private AppointmentService appointmentService;
     private AppointmentRepository appointmentRepository;
@@ -34,7 +37,7 @@ public class AppointmentServiceTest {
     private Appointment appointment;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         appointmentRepository = new AppointmentRepository();
         scheduleRepository = new ScheduleRepository();
         scheduleService = new ScheduleService(scheduleRepository);
@@ -73,7 +76,7 @@ public class AppointmentServiceTest {
     }
 
     @Test
-    public void testBookAppointmentSuccess() {
+    void testBookAppointmentSuccess() {
         boolean result = appointmentService.bookAppointment(appointment);
 
         assertTrue(result);
@@ -81,7 +84,7 @@ public class AppointmentServiceTest {
     }
 
     @Test
-    public void testBookAppointmentFailBecauseSlotUnavailable() {
+    void testBookAppointmentFailBecauseSlotUnavailable() {
         appointmentService.bookAppointment(appointment);
 
         User secondUser = new User("U2", "Ali", "ali@test.com", "0598888888");
@@ -103,45 +106,55 @@ public class AppointmentServiceTest {
     }
 
     @Test
-    public void testCancelFutureAppointmentSuccess() {
+    void testCancelFutureAppointmentSuccess() {
         appointmentService.bookAppointment(appointment);
 
         boolean result = appointmentService.cancelAppointment("AP1");
 
         assertTrue(result);
-        assertEquals(AppointmentStatus.CANCELLED,
-                appointmentRepository.findById("AP1").getStatus());
+        assertEquals(
+                AppointmentStatus.CANCELLED,
+                appointmentRepository.findById("AP1").getStatus()
+        );
     }
+
     @Test
-    public void testBookAppointmentFailBecauseInvalidDuration() {
+    void testBookAppointmentFailBecauseInvalidDuration() {
         appointment.setDurationMinutes(10);
+
         boolean result = appointmentService.bookAppointment(appointment);
+
         assertFalse(result);
     }
 
     @Test
-    public void testBookAppointmentFailBecauseInvalidCapacity() {
+    void testBookAppointmentFailBecauseInvalidCapacity() {
         appointment.setParticipantCount(0);
+
         boolean result = appointmentService.bookAppointment(appointment);
+
         assertFalse(result);
     }
 
     @Test
-    public void testBookAppointmentFailBecauseInvalidAppointmentTypeRule() {
+    void testBookAppointmentFailBecauseInvalidAppointmentTypeRule() {
         appointment.setAppointmentType(AppointmentType.GROUP);
         appointment.setParticipantCount(1);
+
         boolean result = appointmentService.bookAppointment(appointment);
+
         assertFalse(result);
     }
 
     @Test
-    public void testCancelAppointmentFailWhenNotFound() {
+    void testCancelAppointmentFailWhenNotFound() {
         boolean result = appointmentService.cancelAppointment("UNKNOWN");
+
         assertFalse(result);
     }
 
     @Test
-    public void testCancelAppointmentFailWhenAppointmentIsNotFuture() {
+    void testCancelAppointmentFailWhenAppointmentIsNotFuture() {
         User user = new User("U2", "Ali", "ali@test.com", "0598888888");
         TimeSlot slot = new TimeSlot("S2", LocalTime.of(10, 0), LocalTime.of(11, 0), true);
 
@@ -159,17 +172,19 @@ public class AppointmentServiceTest {
         appointmentRepository.save(oldAppointment);
 
         boolean result = appointmentService.cancelAppointment("OLD1");
+
         assertFalse(result);
     }
 
     @Test
-    public void testModifyAppointmentFailWhenNotFound() {
+    void testModifyAppointmentFailWhenNotFound() {
         boolean result = appointmentService.modifyAppointment("UNKNOWN", appointment);
+
         assertFalse(result);
     }
 
     @Test
-    public void testModifyAppointmentFailWhenAppointmentIsNotFuture() {
+    void testModifyAppointmentFailWhenAppointmentIsNotFuture() {
         User user = new User("U3", "mohammed", "mohammed@test.com", "0597777777");
         TimeSlot slot = new TimeSlot("S3", LocalTime.of(11, 0), LocalTime.of(12, 0), true);
 
@@ -187,16 +202,17 @@ public class AppointmentServiceTest {
         appointmentRepository.save(oldAppointment);
 
         boolean result = appointmentService.modifyAppointment("OLD2", appointment);
+
         assertFalse(result);
     }
 
     @Test
-    public void testModifyAppointmentFailBecauseNewSlotUnavailable() {
+    void testModifyAppointmentFailBecauseNewSlotUnavailable() {
         appointmentService.bookAppointment(appointment);
 
         TimeSlot anotherSlot = new TimeSlot("S2", LocalTime.of(10, 0), LocalTime.of(11, 0), false);
-
         User secondUser = new User("U4", "Ahmad", "ahmad@test.com", "0596666666");
+
         Appointment updatedAppointment = new Appointment(
                 "AP1",
                 secondUser,
