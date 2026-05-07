@@ -1,6 +1,8 @@
 package com.appointment.applicationtest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,7 +17,7 @@ import com.appointment.domain.entities.Schedule;
 import com.appointment.domain.valueobjects.TimeSlot;
 import com.appointment.persistence.ScheduleRepository;
 
-public class ScheduleServiceTest {
+class ScheduleServiceTest {
 
     private ScheduleService scheduleService;
     private ScheduleRepository scheduleRepository;
@@ -24,7 +26,7 @@ public class ScheduleServiceTest {
     private TimeSlot slot2;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         scheduleRepository = new ScheduleRepository();
         scheduleService = new ScheduleService(scheduleRepository);
 
@@ -40,33 +42,37 @@ public class ScheduleServiceTest {
     }
 
     @Test
-    public void testGetAvailableSlots() {
+    void testGetAvailableSlots() {
         List<TimeSlot> result = scheduleService.getAvailableSlots(date);
+
         assertEquals(1, result.size());
         assertEquals("S1", result.get(0).getSlotId());
     }
 
     @Test
-    public void testSlotAvailable() {
+    void testSlotAvailable() {
         assertTrue(scheduleService.isSlotAvailable(date, slot1));
         assertFalse(scheduleService.isSlotAvailable(date, slot2));
     }
 
     @Test
-    public void testReserveSlot() {
+    void testReserveSlot() {
         scheduleService.reserveSlot(date, slot1);
+
         assertFalse(slot1.isAvailable());
     }
 
     @Test
-    public void testReleaseSlot() {
+    void testReleaseSlot() {
         scheduleService.releaseSlot(date, slot2);
+
         assertTrue(slot2.isAvailable());
     }
 
     @Test
-    public void testGetAvailableSlotsWhenScheduleNotFound() {
+    void testGetAvailableSlotsWhenScheduleNotFound() {
         List<TimeSlot> result = scheduleService.getAvailableSlots(LocalDate.now().plusDays(5));
+
         assertTrue(result.isEmpty());
     }
 }
