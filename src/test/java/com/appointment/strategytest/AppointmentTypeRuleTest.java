@@ -1,6 +1,7 @@
 package com.appointment.strategytest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,13 +16,13 @@ import com.appointment.domain.enums.AppointmentType;
 import com.appointment.domain.valueobjects.TimeSlot;
 import com.appointment.strategy.AppointmentTypeRule;
 
-public class AppointmentTypeRuleTest {
+class AppointmentTypeRuleTest {
 
     private AppointmentTypeRule appointmentTypeRule;
     private Appointment appointment;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         appointmentTypeRule = new AppointmentTypeRule();
 
         User user = new User("U1", "Awwad", "awwad@test.com", "0599999999");
@@ -40,37 +41,42 @@ public class AppointmentTypeRuleTest {
     }
 
     @Test
-    public void testIndividualAppointmentValid() {
+    void testIndividualAppointmentValid() {
         appointment.setAppointmentType(AppointmentType.INDIVIDUAL);
         appointment.setParticipantCount(1);
+
         assertTrue(appointmentTypeRule.validate(appointment));
     }
 
     @Test
-    public void testIndividualAppointmentInvalid() {
+    void testIndividualAppointmentInvalid() {
         appointment.setAppointmentType(AppointmentType.INDIVIDUAL);
         appointment.setParticipantCount(2);
+
         assertFalse(appointmentTypeRule.validate(appointment));
     }
 
     @Test
-    public void testGroupAppointmentValid() {
+    void testGroupAppointmentValid() {
         appointment.setAppointmentType(AppointmentType.GROUP);
         appointment.setParticipantCount(3);
+
         assertTrue(appointmentTypeRule.validate(appointment));
     }
 
     @Test
-    public void testGroupAppointmentInvalid() {
+    void testGroupAppointmentInvalid() {
         appointment.setAppointmentType(AppointmentType.GROUP);
         appointment.setParticipantCount(1);
+
         assertFalse(appointmentTypeRule.validate(appointment));
     }
 
     @Test
-    public void testOtherAppointmentTypesAreValid() {
+    void testOtherAppointmentTypesAreValid() {
         appointment.setAppointmentType(AppointmentType.URGENT);
         appointment.setParticipantCount(1);
+
         assertTrue(appointmentTypeRule.validate(appointment));
     }
 }
