@@ -1,6 +1,7 @@
 package com.appointment.domaintest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -13,10 +14,10 @@ import com.appointment.domain.enums.AppointmentStatus;
 import com.appointment.domain.enums.AppointmentType;
 import com.appointment.domain.valueobjects.TimeSlot;
 
-public class AppointmentTest {
+class AppointmentTest {
 
     @Test
-    public void testAppointmentConstructorGettersSettersAndToString() {
+    void testAppointmentConstructorGettersSettersAndToString() {
         User user = new User("U1", "Awwad", "awwad@test.com", "0599999999");
         TimeSlot slot = new TimeSlot("S1", LocalTime.of(9, 0), LocalTime.of(10, 0), true);
 
@@ -48,7 +49,6 @@ public class AppointmentTest {
         assertEquals(2, appointment.getParticipantCount());
         assertEquals(AppointmentType.GROUP, appointment.getAppointmentType());
         assertEquals(AppointmentStatus.CANCELLED, appointment.getStatus());
-
         assertNotNull(appointment.toString());
     }
 }
