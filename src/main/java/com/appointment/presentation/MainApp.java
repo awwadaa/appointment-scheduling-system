@@ -27,43 +27,33 @@ import com.appointment.strategy.DurationRule;
 
 /**
  * Main entry point for the Appointment Scheduling System.
- * 
+ *
  * @author awwadaa
  * @version 1.0
  */
 public class MainApp {
 
+    private static final String ADMIN_ID = "A1";
+    private static final String ADMIN_USERNAME = "admin";
+    private static final String DEFAULT_ADMIN_PASSWORD_ENV = "DEFAULT_ADMIN_PASSWORD";
+    private static final String APP_EMAIL_ENV = "APP_EMAIL";
+    private static final String APP_PASSWORD_ENV = "APP_PASSWORD";
+    private static final String SCHEDULE_ID = "SCH1";
+
     /**
      * Starts the application.
-     * 
+     *
      * @param args command line arguments
      */
     public static void main(String[] args) {
-
         AdminRepository adminRepository = new AdminRepository();
         AppointmentRepository appointmentRepository = new AppointmentRepository();
         ScheduleRepository scheduleRepository = new ScheduleRepository();
 
-        Administrator administrator = new Administrator("A1", "admin", "admin123", false);
-        adminRepository.addAdmin(administrator);
+        addDefaultAdmin(adminRepository);
+        addDefaultSchedule(scheduleRepository);
 
-        List<TimeSlot> slots = new ArrayList<>();
-        slots.add(new TimeSlot("S1", LocalTime.of(9, 0), LocalTime.of(10, 0), true));
-        slots.add(new TimeSlot("S2", LocalTime.of(10, 0), LocalTime.of(11, 0), true));
-        slots.add(new TimeSlot("S3", LocalTime.of(11, 0), LocalTime.of(12, 0), true));
-
-        Schedule schedule = new Schedule("SCH1", LocalDate.now().plusDays(1), slots);
-        scheduleRepository.saveSchedule(schedule);
-
-        NotificationSubject notificationSubject = new NotificationSubject();
-
-        EmailSender emailSender = new GmailEmailSender(
-                "awwad3905@gmail.com",
-                "yhgtwuzjcxxkvnqb"
-        );
-
-        notificationSubject.addObserver(new EmailNotificationObserver(emailSender));
-        notificationSubject.addObserver(new SMSNotificationObserver());
+        NotificationSubject notificationSubject = createNotificationSubject();
 
         AuthService authService = new AuthService(adminRepository);
         ScheduleService scheduleService = new ScheduleService(scheduleRepository);
@@ -72,18 +62,13 @@ public class MainApp {
         AppointmentService appointmentService =
                 new AppointmentService(appointmentRepository, scheduleService, notificationSubject);
 
-        appointmentService.addBookingRule(new DurationRule());
-        appointmentService.addBookingRule(new CapacityRule());
-        appointmentService.addBookingRule(new AppointmentTypeRule());
+        addBookingRules(appointmentService);
 
         AdminService adminService = new AdminService(appointmentService, authService);
 
-        MenuDisplay menuDisplay = new MenuDisplay();
-        InputHandler inputHandler = new InputHandler();
-
         MenuController menuController = new MenuController(
-                menuDisplay,
-                inputHandler,
+                new MenuDisplay(),
+                new InputHandler(),
                 authService,
                 scheduleService,
                 appointmentService,
@@ -92,5 +77,64 @@ public class MainApp {
         );
 
         menuController.start();
+    }
+
+    private static void addDefaultAdmin(AdminRepository adminRepository) {
+        String adminPassword = getEnvironmentValue(DEFAULT_ADMIN_PASSWORD_ENV);
+        Administrator administrator = new Administrator(ADMIN_ID, ADMIN_USERNAME, adminPassword, false);
+        adminRepository.addAdmin(administrator);
+    }
+
+    private static void addDefaultSchedule(ScheduleRepository scheduleRepository) {
+        Schedule schedule = new Schedule(
+                SCHEDULE_ID,
+                LocalDate.now().plusDays(1),
+                createDefaultTimeSlots()
+        );
+
+        scheduleRepository.saveSchedule(schedule);
+    }
+
+    private static List<TimeSlot> createDefaultTimeSlots() {
+        List<TimeSlot> slots = new ArrayList<>();
+        slots.add(new TimeSlot("S1", LocalTime.of(9, 0), LocalTime.of(10, 0), true));
+        slots.add(new TimeSlot("S2", LocalTime.of(10, 0), LocalTime.of(11, 0), true));
+        slots.add(new TimeSlot("S3", LocalTime.of(11, 0), LocalTime.of(12, 0), true));
+        return slots;
+    }
+
+    private static NotificationSubject createNotificationSubject() {
+        NotificationSubject notificationSubject = new NotificationSubject();
+
+        addEmailObserverIfConfigured(notificationSubject);
+        notificationSubject.addObserver(new SMSNotificationObserver());
+
+        return notificationSubject;
+    }
+
+    private static void addEmailObserverIfConfigured(NotificationSubject notificationSubject) {
+        String senderEmail = getEnvironmentValue(APP_EMAIL_ENV);
+        String appPassword = getEnvironmentValue(APP_PASSWORD_ENV);
+
+        if (!senderEmail.isEmpty() && !appPassword.isEmpty()) {
+            EmailSender emailSender = new GmailEmailSender(senderEmail, appPassword);
+            notificationSubject.addObserver(new EmailNotificationObserver(emailSender));
+        }
+    }
+
+    private static void addBookingRules(AppointmentService appointmentService) {
+        appointmentService.addBookingRule(new DurationRule());
+        appointmentService.addBookingRule(new CapacityRule());
+        appointmentService.addBookingRule(new AppointmentTypeRule());
+    }
+
+    private static String getEnvironmentValue(String variableName) {
+        String value = System.getenv(variableName);
+
+        if (value == null) {
+            return "";
+        }
+
+        return value;
     }
 }
