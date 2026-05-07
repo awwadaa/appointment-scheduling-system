@@ -1,6 +1,7 @@
 package com.appointment.persistencetest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,49 +16,66 @@ import com.appointment.domain.enums.AppointmentType;
 import com.appointment.domain.valueobjects.TimeSlot;
 import com.appointment.persistence.AppointmentRepository;
 
-public class AppointmentRepositoryTest {
+class AppointmentRepositoryTest {
+
+    private static final String APPOINTMENT_ID = "AP1";
+    private static final String USER_ID = "U1";
+    private static final String USER_NAME = "Awwad";
+    private static final String USER_EMAIL = "awwad@test.com";
+    private static final String USER_PHONE = "0599999999";
 
     private AppointmentRepository repository;
     private Appointment appointment;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         repository = new AppointmentRepository();
 
-        User user = new User("U1", "Awwad", "awwad@test.com", "0599999999");
+        User user = new User(USER_ID, USER_NAME, USER_EMAIL, USER_PHONE);
         TimeSlot slot = new TimeSlot("S1", LocalTime.of(9, 0), LocalTime.of(10, 0), true);
 
         appointment = new Appointment(
-                "AP1", user, LocalDate.now().plusDays(1), slot,
-                60, 1, AppointmentType.INDIVIDUAL, AppointmentStatus.CONFIRMED
+                APPOINTMENT_ID,
+                user,
+                LocalDate.now().plusDays(1),
+                slot,
+                60,
+                1,
+                AppointmentType.INDIVIDUAL,
+                AppointmentStatus.CONFIRMED
         );
     }
 
     @Test
-    public void testSaveAndFindById() {
+    void testSaveAndFindById() {
         repository.save(appointment);
-        assertEquals(appointment, repository.findById("AP1"));
+
+        assertEquals(appointment, repository.findById(APPOINTMENT_ID));
     }
 
     @Test
-    public void testFindAll() {
+    void testFindAll() {
         repository.save(appointment);
+
         assertEquals(1, repository.findAll().size());
     }
 
     @Test
-    public void testDelete() {
+    void testDelete() {
         repository.save(appointment);
-        repository.delete("AP1");
-        assertNull(repository.findById("AP1"));
+
+        repository.delete(APPOINTMENT_ID);
+
+        assertNull(repository.findById(APPOINTMENT_ID));
     }
 
     @Test
-    public void testUpdate() {
+    void testUpdate() {
         repository.save(appointment);
+
         appointment.setParticipantCount(3);
         repository.update(appointment);
 
-        assertEquals(3, repository.findById("AP1").getParticipantCount());
+        assertEquals(3, repository.findById(APPOINTMENT_ID).getParticipantCount());
     }
 }
