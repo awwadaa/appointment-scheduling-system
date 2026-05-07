@@ -1,7 +1,13 @@
 package com.appointment.applicationtest;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.contains;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,22 +24,31 @@ import com.appointment.domain.valueobjects.NotificationMessage;
 import com.appointment.domain.valueobjects.TimeSlot;
 import com.appointment.observer.NotificationSubject;
 
-public class ReminderServiceTest {
+class ReminderServiceTest {
+
+    private static final String APPOINTMENT_ID = "AP1";
+    private static final String USER_ID = "U1";
+    private static final String USER_NAME = "Awwad";
+    private static final String USER_EMAIL = "awwad@test.com";
+    private static final String USER_PHONE = "0599999999";
+    private static final String SLOT_ID = "S1";
+    private static final String EXPECTED_REMINDER_ID = "REM-AP1";
+    private static final String REMINDER_TEXT = "Reminder";
 
     private ReminderService reminderService;
     private NotificationSubject notificationSubject;
     private Appointment appointment;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         notificationSubject = mock(NotificationSubject.class);
         reminderService = new ReminderService(notificationSubject);
 
-        User user = new User("U1", "Awwad", "awwad@test.com", "0599999999");
-        TimeSlot slot = new TimeSlot("S1", LocalTime.of(9, 0), LocalTime.of(10, 0), true);
+        User user = new User(USER_ID, USER_NAME, USER_EMAIL, USER_PHONE);
+        TimeSlot slot = new TimeSlot(SLOT_ID, LocalTime.of(9, 0), LocalTime.of(10, 0), true);
 
         appointment = new Appointment(
-                "AP1",
+                APPOINTMENT_ID,
                 user,
                 LocalDate.now().plusDays(1),
                 slot,
@@ -45,19 +60,19 @@ public class ReminderServiceTest {
     }
 
     @Test
-    public void testCreateReminder() {
+    void testCreateReminder() {
         NotificationMessage message = reminderService.createReminder(appointment);
 
         assertNotNull(message);
-        assertEquals("REM-AP1", message.getNotificationId());
-        assertTrue(message.getMessage().contains("Reminder"));
+        assertEquals(EXPECTED_REMINDER_ID, message.getNotificationId());
+        assertTrue(message.getMessage().contains(REMINDER_TEXT));
     }
 
     @Test
-    public void testSendReminder() {
+    void testSendReminder() {
         reminderService.sendReminder(appointment);
 
         verify(notificationSubject, times(1))
-                .notifyObservers(eq(appointment.getUser()), contains("Reminder"));
+                .notifyObservers(eq(appointment.getUser()), contains(REMINDER_TEXT));
     }
 }
