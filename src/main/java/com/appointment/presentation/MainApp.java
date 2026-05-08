@@ -4,6 +4,10 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import com.appointment.application.AdminService;
 import com.appointment.application.AppointmentService;
@@ -46,6 +50,8 @@ public class MainApp {
      * @param args command line arguments
      */
     public static void main(String[] args) {
+        configureCleanLogging();
+
         AdminRepository adminRepository = new AdminRepository();
         AppointmentRepository appointmentRepository = new AppointmentRepository();
         ScheduleRepository scheduleRepository = new ScheduleRepository();
@@ -77,6 +83,16 @@ public class MainApp {
         );
 
         menuController.start();
+    }
+
+    private static void configureCleanLogging() {
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
+
+        Logger rootLogger = LogManager.getLogManager().getLogger("");
+
+        for (Handler handler : rootLogger.getHandlers()) {
+            handler.setFormatter(new SimpleFormatter());
+        }
     }
 
     private static void addDefaultAdmin(AdminRepository adminRepository) {
