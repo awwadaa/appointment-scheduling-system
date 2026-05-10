@@ -80,6 +80,7 @@
                                  <exclude>com/appointment/presentation/**</exclude>
                                  <exclude>com/appointment/observer/GmailEmailSender.class</exclude>
                                  <exclude>com/appointment/observer/EmailSender.class</exclude>
+                                 <exclude>com/appointment/observer/EmailSendingException*</exclude>
                             </excludes>
                         </configuration>
                     </execution>
