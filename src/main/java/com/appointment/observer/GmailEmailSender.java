@@ -69,7 +69,7 @@ public class GmailEmailSender implements EmailSender {
             System.out.println("Real email sent successfully to " + recipientEmail);
 
         } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
+            throw new EmailSendingException("Failed to send email: " + e.getMessage(), e);
         }
     }
 }
