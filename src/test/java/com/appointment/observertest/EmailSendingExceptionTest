@@ -1,0 +1,24 @@
+package com.appointment.observertest;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+import org.junit.jupiter.api.Test;
+
+import com.appointment.observer.EmailSendingException;
+
+class EmailSendingExceptionTest {
+
+    @Test
+    void testEmailSendingExceptionStoresMessageAndCause() {
+        Throwable cause = new IllegalArgumentException("Invalid email credentials");
+
+        EmailSendingException exception = new EmailSendingException(
+                "Failed to send email",
+                cause
+        );
+
+        assertEquals("Failed to send email", exception.getMessage());
+        assertSame(cause, exception.getCause());
+    }
+}
