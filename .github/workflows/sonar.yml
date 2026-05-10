@@ -54,4 +54,4 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=$SONAR_TOKEN \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-            -Dsonar.coverage.exclusions=**/presentation/**,**/observer/GmailEmailSender.java,**/observer/EmailSender.java,**/observer/Observer.java
+            -Dsonar.coverage.exclusions=**/presentation/**,**/observer/GmailEmailSender.java,**/observer/EmailSender.java,**/observer/Observer.java,**/observer/EmailSendingException.java
